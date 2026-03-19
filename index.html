@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Augmented Physics</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #f7c26a;
+    --text: #e8e8f0;
+    --text2: #888899;
+    --glow: rgba(124,106,247,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(124,106,247,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 80%, rgba(247,194,106,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    display: flex; align-items: baseline; gap: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #e8e8f0 0%, var(--accent) 60%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .badge {
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent2); border: 1px solid var(--accent2);
+    padding: 0.2rem 0.5rem; border-radius: 2px; white-space: nowrap;
+    opacity: 0.8;
+  }
+
+  .tagline {
+    color: var(--text2); font-size: 0.8rem; margin-bottom: 2rem;
+    font-style: italic;
+  }
+
+  /* ─── Main layout ─── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 720px) { .main-grid { grid-template-columns: 1fr; } }
+
+  /* ─── Panel ─── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text2);
+  }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  .panel-body { padding: 1.2rem; }
+
+  /* ─── Domain selector ─── */
+  .domain-row {
+    display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;
+  }
+
+  .domain-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .domain-btn:hover { border-color: var(--accent); color: var(--text); }
+  .domain-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 12px var(--glow);
+  }
+
+  /* ─── Description textarea ─── */
+  label { font-size: 0.7rem; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 0.4rem; }
+
+  textarea {
+    width: 100%;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+
+  /* ─── Image upload ─── */
+  .upload-zone {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 1.2rem;
+    text-align: center;
+    color: var(--text2);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.8rem;
+    position: relative;
+    background: var(--surface2);
+  }
+  .upload-zone:hover { border-color: var(--accent); color: var(--text); background: rgba(124,106,247,0.05); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+
+  #preview-img {
+    width: 100%; border-radius: 6px; margin-top: 0.8rem;
+    display: none; border: 1px solid var(--border);
+    max-height: 200px; object-fit: contain; background: #000;
+  }
+
+  /* ─── Augment button ─── */
+  .augment-btn {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    font-style: italic;
+    width: 100%;
+    padding: 0.85rem;
+    margin-top: 1rem;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), #9b8af9);
+    color: #fff;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(124,106,247,0.25);
+    position: relative;
+    overflow: hidden;
+  }
+  .augment-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(124,106,247,0.35); }
+  .augment-btn:active { transform: translateY(0); }
+  .augment-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  .augment-btn .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 0.4rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── Right panel: simulation ─── */
+  .sim-panel { position: sticky; top: 1rem; }
+
+  .sim-container {
+    width: 100%; aspect-ratio: 1 / 0.85;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+    border: 1px solid var(--border);
+  }
+
+  .sim-container iframe {
+    width: 100%; height: 100%;
+    border: none;
+    display: block;
+  }
+
+  .sim-placeholder {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text2); font-size: 0.8rem; gap: 0.6rem;
+    text-align: center; padding: 2rem;
+  }
+
+  .sim-placeholder .big-icon { font-size: 2.5rem; opacity: 0.3; }
+
+  /* ─── Info / strategy tags ─── */
+  .strategy-row {
+    display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.8rem;
+  }
+
+  .strat-tag {
+    font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.25rem 0.55rem; border-radius: 4px;
+    border: 1px solid var(--border); color: var(--text2);
+    transition: all 0.2s;
+  }
+  .strat-tag.active { border-color: var(--accent2); color: var(--accent2); background: rgba(247,194,106,0.08); }
+
+  /* ─── Log ─── */
+  .log {
+    font-size: 0.7rem; color: var(--text2);
+    line-height: 1.7; margin-top: 0.8rem;
+    min-height: 1.5rem;
+  }
+  .log .ok { color: #5cf0a5; }
+  .log .err { color: #f0765c; }
+
+  /* ─── Examples ─── */
+  .examples-row {
+    display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap;
+  }
+
+  .ex-chip {
+    font-size: 0.68rem; padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text2); cursor: pointer; transition: all 0.15s;
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+  }
+  .ex-chip:hover { border-color: var(--accent2); color: var(--accent2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Augmented Physics</h1>
+    <span class="badge">UIST '24</span>
+  </header>
+  <p class="tagline">Transform static textbook diagrams into interactive simulations — powered by Claude</p>
+
+  <div class="main-grid">
+    <!-- LEFT: Input -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+        <span style="margin-left:0.3rem">diagram input</span>
+      </div>
+      <div class="panel-body">
+
+        <label>Physics Domain</label>
+        <div class="domain-row">
+          <button class="domain-btn active" onclick="selectDomain(this,'optics')">⚡ Optics</button>
+          <button class="domain-btn" onclick="selectDomain(this,'kinematics')">🏃 Kinematics</button>
+          <button class="domain-btn" onclick="selectDomain(this,'circuits')">🔌 Circuits</button>
+          <button class="domain-btn" onclick="selectDomain(this,'pendulum')">🔮 Pendulum</button>
+          <button class="domain-btn" onclick="selectDomain(this,'waves')">〰️ Waves</button>
+          <button class="domain-btn" onclick="selectDomain(this,'gravity')">🌍 Gravity</button>
+        </div>
+
+        <label>Diagram Description</label>
+        <textarea id="desc" placeholder="Describe the diagram or physics setup…
+e.g. A convex lens with an object on the left, showing the principal axis and focal points…"></textarea>
+
+        <div class="examples-row" id="ex-row"></div>
+
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">📄</div>
+          <div>Drop a textbook image here, or click to upload</div>
+          <div style="font-size:0.65rem;margin-top:0.25rem;opacity:0.6">PNG, JPG, PDF screenshot</div>
+          <input type="file" accept="image/*" id="file-input" onchange="handleFile(event)">
+        </div>
+        <img id="preview-img" alt="uploaded diagram">
+
+        <button class="augment-btn" id="aug-btn" onclick="augment()">
+          ✦ Augment this Diagram
+        </button>
+
+        <div class="log" id="log">// ready</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Simulation -->
+    <div class="panel sim-panel">
+      <div class="panel-header">
+        <span class="dot dot-r"></span>
+        <span class="dot dot-y"></span>
+        <span class="dot dot-g"></span>
+        <span style="margin-left:0.3rem">interactive simulation</span>
+      </div>
+      <div class="panel-body" style="padding:0.8rem">
+        <div class="sim-container" id="sim-container">
+          <div class="sim-placeholder" id="sim-placeholder">
+            <div class="big-icon">⚛</div>
+            <div>Your simulation will appear here</div>
+            <div style="font-size:0.7rem;opacity:0.6;margin-top:0.3rem">Describe a diagram and click Augment</div>
+          </div>
+        </div>
+        <div class="strategy-row">
+          <span class="strat-tag" id="s1">augmented experiment</span>
+          <span class="strat-tag" id="s2">animated diagram</span>
+          <span class="strat-tag" id="s3">bi-directional binding</span>
+          <span class="strat-tag" id="s4">parameter viz</span>
+        </div>
+        <div class="log" id="sim-log"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLES = {
+  optics: [
+    "Convex lens with object on left, showing focal points and image formation",
+    "Concave mirror diagram with principal axis and center of curvature",
+    "Two plane mirrors at 90° showing multiple reflections"
+  ],
+  kinematics: [
+    "Projectile launched at 45° from a cliff with velocity vectors",
+    "Object on inclined plane with friction arrows and normal force",
+    "Ball thrown horizontally from height, showing parabolic path"
+  ],
+  circuits: [
+    "Simple series circuit with battery, resistor, and bulb",
+    "RC circuit charging through a resistor",
+    "Parallel resistors with ammeter and voltmeter"
+  ],
+  pendulum: [
+    "Simple pendulum with bob, string, and angle θ labeled",
+    "Double pendulum with two masses connected by strings",
+    "Pendulum showing energy transformation graph"
+  ],
+  waves: [
+    "Standing wave on a string fixed at both ends with nodes",
+    "Two waves interfering showing constructive and destructive regions",
+    "Transverse wave with wavelength and amplitude labeled"
+  ],
+  gravity: [
+    "Two masses showing gravitational attraction with force arrows",
+    "Planet orbiting a star in elliptical path",
+    "Object in free fall with velocity and acceleration arrows"
+  ]
+};
+
+let currentDomain = 'optics';
+let uploadedImageB64 = null;
+
+function selectDomain(btn, domain) {
+  document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentDomain = domain;
+  renderExamples();
+  // suggest a description
+  const desc = document.getElementById('desc');
+  if (!desc.value.trim()) {
+    desc.placeholder = `e.g. ${EXAMPLES[domain][0]}`;
+  }
+}
+
+function renderExamples() {
+  const row = document.getElementById('ex-row');
+  row.innerHTML = '';
+  (EXAMPLES[currentDomain] || []).forEach(ex => {
+    const btn = document.createElement('button');
+    btn.className = 'ex-chip';
+    btn.textContent = ex.length > 40 ? ex.slice(0,38)+'…' : ex;
+    btn.title = ex;
+    btn.onclick = () => { document.getElementById('desc').value = ex; };
+    row.appendChild(btn);
+  });
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    uploadedImageB64 = ev.target.result.split(',')[1];
+    const img = document.getElementById('preview-img');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    setLog('Image loaded — will include in analysis', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+
+function setLog(msg, type='') {
+  const el = document.getElementById('log');
+  el.innerHTML = `<span class="${type}">// ${msg}</span>`;
+}
+function setSimLog(msg, type='') {
+  const el = document.getElementById('sim-log');
+  el.innerHTML = `<span class="${type}">// ${msg}</span>`;
+}
+
+function setStrategies(strategies) {
+  ['s1','s2','s3','s4'].forEach(id => document.getElementById(id).classList.remove('active'));
+  if (strategies.includes('experiment')) document.getElementById('s1').classList.add('active');
+  if (strategies.includes('animated')) document.getElementById('s2').classList.add('active');
+  if (strategies.includes('binding')) document.getElementById('s3').classList.add('active');
+  if (strategies.includes('params')) document.getElementById('s4').classList.add('active');
+}
+
+async function augment() {
+  const desc = document.getElementById('desc').value.trim();
+  if (!desc) { setLog('Please describe a diagram first', 'err'); return; }
+
+  const btn = document.getElementById('aug-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Augmenting…';
+  setLog('Analysing diagram structure…');
+  setSimLog('');
+  setStrategies([]);
+
+  const systemPrompt = `You are an expert physics simulation generator. Given a description of a static physics textbook diagram, you output a SINGLE self-contained HTML file (no external dependencies except standard Canvas/JS) that is a rich, interactive physics simulation matching the described diagram.
+
+Requirements:
+- Use HTML5 Canvas for rendering
+- The simulation must be physically accurate and visually beautiful
+- Use a dark background (#0a0a0f or similar)
+- Draw the static diagram elements first (axes, labels, objects) then animate physics on top
+- Add interactive controls: sliders for key parameters (e.g. angle, mass, velocity, focal length)
+- Animate the physics in real-time (requestAnimationFrame)
+- Label important quantities and show live readouts
+- Keep controls minimal and elegant (inline sliders with labels, rendered on canvas or as minimal HTML overlay)
+- The file must work standalone in an iframe
+- Output ONLY the raw HTML, no markdown fences, no explanation`;
+
+  let userContent;
+  if (uploadedImageB64) {
+    userContent = [
+      { type: "image", source: { type: "base64", media_type: "image/jpeg", data: uploadedImageB64 } },
+      { type: "text", text: `Physics domain: ${currentDomain}\nDiagram description: ${desc}\n\nGenerate an interactive HTML5 Canvas simulation for this physics diagram. Include at least 2 interactive sliders, smooth animation, and clear labels.` }
+    ];
+  } else {
+    userContent = [
+      { type: "text", text: `Physics domain: ${currentDomain}\nDiagram description: ${desc}\n\nGenerate an interactive HTML5 Canvas simulation for this physics diagram. Include at least 2 interactive sliders, smooth animation, and clear labels. Make it visually rich and physically accurate.` }
+    ];
+  }
+
+  try {
+    setLog('Sending to Claude…');
+    const res = await fetch('http://localhost:3000/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userContent }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || res.statusText);
+    }
+
+    const data = await res.json();
+    const html = data.content.map(b => b.text || '').join('').trim()
+      .replace(/^```html?\n?/, '').replace(/\n?```$/, '');
+
+    setLog(`Simulation generated (${(html.length/1000).toFixed(1)}kb)`, 'ok');
+
+    // Detect strategies used
+    const lower = html.toLowerCase();
+    const strategies = [];
+    if (lower.includes('slider') || lower.includes('input')) strategies.push('experiment', 'binding', 'params');
+    if (lower.includes('animate') || lower.includes('requestanimationframe')) strategies.push('animated');
+    setStrategies(strategies);
+
+    // Inject into iframe
+    const container = document.getElementById('sim-container');
+    const placeholder = document.getElementById('sim-placeholder');
+    placeholder && (placeholder.style.display = 'none');
+
+    let iframe = container.querySelector('iframe');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.sandbox = 'allow-scripts allow-same-origin';
+      container.appendChild(iframe);
+    }
+    const blob = new Blob([html], { type: 'text/html' });
+    iframe.src = URL.createObjectURL(blob);
+    setSimLog('Simulation running — interact with sliders to explore', 'ok');
+
+  } catch(e) {
+    setLog(`Error: ${e.message}`, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✦ Augment this Diagram';
+  }
+}
+
+// Init
+renderExamples();
+</script>
+</body>
+</html>
