@@ -485,7 +485,7 @@ Requirements:
 
   try {
     setLog('Sending to Claude…');
-    const res = await fetch('http://localhost:3000/v1/messages', {
+    const res = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
