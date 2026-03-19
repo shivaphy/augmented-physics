@@ -1,5 +1,16 @@
 {
+  "functions": {
+    "api/proxy.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "rewrites": [
     { "source": "/v1/messages", "destination": "/api/proxy" }
   ]
 }
+```
+→ Commit
+
+Vercel will auto-redeploy. Once done, **first test the function directly** by visiting:
+```
+https://your-project.vercel.app/api/proxy
