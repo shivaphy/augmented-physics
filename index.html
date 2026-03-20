@@ -485,7 +485,7 @@ Requirements:
 
   try {
     setLog('Sending to Claude…');
-    const res = await fetch('/api/proxy', {
+    const res = await fetch('/.netlify/functions/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -496,12 +496,22 @@ Requirements:
       })
     });
 
+    const rawText = await res.text();
+    setLog(`Status: ${res.status} | Response: ${rawText.substring(0, 120)}`);
+
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error?.message || res.statusText);
+      let errMsg = rawText;
+      try { errMsg = JSON.parse(rawText)?.error?.message || rawText; } catch(e) {}
+      throw new Error(`HTTP ${res.status}: ${errMsg}`);
     }
 
-    const data = await res.json();
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch(e) {
+      throw new Error(`Bad JSON from proxy: ${rawText.substring(0, 200)}`);
+    }
+
     const html = data.content.map(b => b.text || '').join('').trim()
       .replace(/^```html?\n?/, '').replace(/\n?```$/, '');
 
