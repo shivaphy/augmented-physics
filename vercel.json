@@ -1,16 +1,28 @@
 {
-  "functions": {
-    "api/proxy.js": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "rewrites": [
     { "source": "/v1/messages", "destination": "/api/proxy" }
   ]
 }
 ```
-→ Commit
 
-Vercel will auto-redeploy. Once done, **first test the function directly** by visiting:
+**`index.html`** — make sure the fetch URL is `/api/proxy` (not localhost, not `.netlify/functions/proxy`)
+
+---
+
+**Step 3 — Import fresh on Vercel**
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Click **Import** next to `augmented-physics`
+3. **Framework Preset → Other**
+4. Click **Deploy**
+
+---
+
+**Step 4 — Add API key**
+- Settings → Environment Variables → add `ANTHROPIC_API_KEY`
+- Redeploy
+
+---
+
+**Step 5 — Test**
 ```
-https://your-project.vercel.app/api/proxy
+https://augmented-physics.vercel.app/api/proxy
