@@ -1,0 +1,35 @@
+module.exports = async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: { message: "API key not set" } });
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify(req.body),
+  });
+
+  const data = await response.json();
+  res.status(response.status).json(data);
+};
+```
+
+5. Click **Commit new file**
+
+---
+
+**Then check Vercel auto-redeployed** (it should trigger automatically when you push to GitHub).
+
+After redeploy test:
+```
+https://your-project.vercel.app/api/proxy
