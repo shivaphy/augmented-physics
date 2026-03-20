@@ -3,26 +3,3 @@
     { "source": "/v1/messages", "destination": "/api/proxy" }
   ]
 }
-```
-
-**`index.html`** — make sure the fetch URL is `/api/proxy` (not localhost, not `.netlify/functions/proxy`)
-
----
-
-**Step 3 — Import fresh on Vercel**
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Click **Import** next to `augmented-physics`
-3. **Framework Preset → Other**
-4. Click **Deploy**
-
----
-
-**Step 4 — Add API key**
-- Settings → Environment Variables → add `ANTHROPIC_API_KEY`
-- Redeploy
-
----
-
-**Step 5 — Test**
-```
-https://augmented-physics.vercel.app/api/proxy
