@@ -1,5 +1,24 @@
 {
-  "rewrites": [
-    { "source": "/v1/messages", "destination": "/api/proxy" }
+  "version": 2,
+  "builds": [
+    { "src": "api/proxy.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/proxy", "dest": "/api/proxy.js" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
+```
+
+→ Click **Commit changes**
+
+This explicitly tells Vercel to:
+- Build `api/proxy.js` using the Node.js runtime
+- Route `/api/proxy` to that function
+- Route everything else to `index.html`
+
+---
+
+**Wait for Vercel to auto-redeploy** (~30 seconds), then test:
+```
+https://your-project.vercel.app/api/proxy
