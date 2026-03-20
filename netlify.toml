@@ -1,0 +1,32 @@
+[[redirects]]
+  from = "/v1/messages"
+  to = "/.netlify/functions/proxy"
+  status = 200
+```
+→ Commit
+
+**File 3 — Create `netlify/functions/proxy.js`**
+- Add file → Create new file
+- Type the name as `netlify/functions/proxy.js` (slashes create the folders)
+- Paste the proxy code → Commit
+
+---
+
+**Step 2 — Connect GitHub to Netlify**
+1. Go to [app.netlify.com](https://app.netlify.com) → **Add new site → Import an existing project**
+2. Click **GitHub**
+3. Select your `augmented-physics` repo
+4. Leave all settings as default → click **Deploy site**
+
+---
+
+**Step 3 — Add API key**
+- Site → **Site configuration → Environment variables**
+- Add `ANTHROPIC_API_KEY` = `sk-ant-...`
+- Then **Deploys → Trigger deploy → Deploy site**
+
+---
+
+**Step 4 — Test**
+```
+https://your-site.netlify.app/.netlify/functions/proxy
